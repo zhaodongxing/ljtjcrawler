@@ -5,6 +5,8 @@ import urllib2
 import os
 import MySQLdb
 import time
+import shutil
+from parser import page_parser
 
 def get_html_and_save(url,wfile):
     headers={"User-Agent":"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1"}
@@ -74,37 +76,37 @@ def get_overview_info(fname):
     return overview
              
 def save_houses_info(seed_url,cursor):
-    total_re=re.compile(r'"total">([0-9]*).*')
-    price_re=re.compile(r'"unitPriceValue">([0-9]*)')
-    room_re = re.compile(r'room".*\n.*mainInfo">(.*)</div>\n.*"subInfo">(.*)</div>\n')
-    area_re = re.compile(r'area.*\n.*mainInfo">(.*)</div>\n')
-    community_re = re.compile(r'communityName".*\n.*\n.*\n.*class="info">(.*)</a>\n')
-    id_re = re.compile(r'houseRecord".*\n.*"label">.*</span>\n.*class="info">([0-9]*)')
-    date_now=time.strftime("%Y-%m-%d")
 
     for region in seed_url.keys():
         house_dir = "%s/house"%region
         for fn in os.listdir(house_dir):
-            fname=os.path.join(house_dir,fn)
-            overview = get_overview_info(fname)
+            fname = os.path.join(house_dir,fn)
+            print 'parse %s'%fname
+            pageinfo = open(fname).read()
+            record = page_parser(pageinfo)
 
-            price      = overview[overview.find('price'):overview.find('houseInfo')]
-            main_info  = overview[overview.find('houseInfo'):overview.find('aroundInfo')]
-            aroundInfo = overview[overview.find('aroundInfo'):overview.find('brokerInfo')]
-    
-            house_id   = id_re.search(aroundInfo).group(1)
-            community  = community_re.search(aroundInfo).group(1)
-            house_type = room_re.search(main_info).group(1)
-            sub_info   = room_re.search(main_info).group(2)
+            house_id   = record.houseid
+            community  = record.communityName
+            house_type = record.type
+            sub_info   = record.sub_info
             
-            house_area = area_re.search(main_info).group(1)
-            total      = total_re.search(price).group(1)
-            price      = price_re.search(price).group(1)
-            affected   = cursor.execute(r"insert into regions.tyc values('%s','%s','%s','%s','%s','%s','%s','%s')"\
-                                          %(date_now,house_id,house_area,community,house_type,sub_info,total,price))
+            house_area = record.area
+            total      = record.total
+            price      = record.price
+            affected   = cursor.execute(r"insert into regions.%s values('%s','%s','%s','%s','%s','%s','%s','%s')"\
+                                       %(region,date_now,house_id,house_area,community,house_type,sub_info,total,price))
 
 
-seed_url={'tyc':'http://tj.lianjia.com/ershoufang/taiyangcheng/'} #太阳城
+seed_url={'tyc':'http://tj.lianjia.com/ershoufang/taiyangcheng/','mj':'http://tj.lianjia.com/ershoufang/meijiang/'}
+
+date_now=time.strftime("%Y-%m-%d")
+'''
+if os.path.exists(date_now):
+    shutil.rmtree(date_now)
+
+os.mkdir(date_now)
+'''
+os.chdir(date_now)
 
 #save_url_houses(seed_url)
 
@@ -114,16 +116,4 @@ cur.execute("SET NAMES utf8")
 
 save_houses_info(seed_url,cur)
 conn.commit()    
-    
-                
-    
-
-        
-
-
-    
-
-
-
-
 
