@@ -1,6 +1,8 @@
 #-*-coding:utf-8 -*-
 import os
 import re
+import urllib2
+import json
 
 class page_parser:
     def __init__(self,page):
@@ -48,9 +50,12 @@ class page_parser:
         self.area = pattern.search(self.getslice(keys)).group(1)
 
     def parsecommunityName(self):
-        pattern = re.compile(r'info">(.*)</a>')
-        keys = ['communityName','info','\n']
-        self.communityName = pattern.search(self.getslice(keys)).group(1)
+        pattern = re.compile(r'xiaoqu/([0-9]*).*info">(.*)</a>')
+        keys = ['communityName','href','\n']
+        match = pattern.search(self.getslice(keys))
+        self.rid = match.group(1)
+        self.communityName = match.group(2)
+        print 'rid %s,%s'%(self.rid,self.communityName)
 
     def parseregions(self):
         pattern = re.compile(r'target="_blank">(.*)</a>.*target="_blank">(.*)</a>')
@@ -70,9 +75,31 @@ class page_parser:
         self.housetype = pattern.search(self.getslice(keys)).group(1)
 
     def parsevisit(self):
+        headers={"User-Agent":"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1"}
+        url='http://tj.lianjia.com/ershoufang/housestat?hid=%s&rid=%s'%(self.houseid,self.rid)
+        page = None
+        jobj = None
+        for i in range(3):
+            try:
+                page = urllib2.urlopen(urllib2.Request(url,headers=headers))
+                jstr = page.read()
+                jobj = json.loads(jstr)
+                break
+            except:
+                if i == 2:
+                    raise
+                print "url read exception : %s"%url
+
+        self.recentvisit = jobj['data']['seeRecord']['thisWeek']
+        self.totalvisit = jobj['data']['seeRecord']['totalCnt']
+
+
+"""
+    def parsevisit(self):
         pattern = re.compile(r'count">([0-9]*)</div>.*\n.*<span>([0-9]*)')
         keys = ['class="record"',r'近7天带看次数','count','</span>']
         match = pattern.search(self.getslice(keys))
-        self.visit7days = match.group(1)
-        self.visittotal = match.group(2)
+        self.recentvisit = match.group(1)
+        self.totalvisit = match.group(2)
+"""
 
