@@ -7,23 +7,32 @@ import sys
 import MySQLdb
 import time
 from parser import page_parser
+crawl_delay = 2
 
-def get_html_and_save(url,wfile):
-    headers={"User-Agent":"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1"}
+def save_html_page(page):
+    f=open(wfile,'w')
+    f.write(page)
+    f.close()
+
+def get_html_page(url):
+    headers={"User-Agent":"Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.0; Trident/4.0"}
     page=None
     for i in range(3):
         try:
             page=urllib2.urlopen(urllib2.Request(url,headers=headers))
             html = page.read()
             break
+        except urllib2.HTTPError,e:
+            if e.getcode() == 404:
+                return None 
+            else:
+                raise
         except:
             if i == 2:
                 raise
+            time.sleep(1)
             print "url read exception : %s"%url
 
-    index_file=open(wfile,'w')
-    index_file.write(html)
-    index_file.close()
     page.close()
     return html
 
@@ -43,16 +52,29 @@ def save_url_houses(seed_url):
         os.mkdir(region)
         region_url = seed_url[region]
         print "open %s"%region_url
-        html = get_html_and_save(region_url,'%s/%s.html'%(region,region))
-        total_index = html.index('totalPage')
-        total_index = total_index + 11
-        total_index_end = html.index(',',total_index)
-        total_page  = int(html[total_index:total_index_end])
+        for i in range(3):
+            try:
+                html = get_html_and_save(region_url,'%s/%s.html'%(region,region))
+                total_index = html.index('totalPage')
+                total_index = total_index + 11
+                total_index_end = html.index(',',total_index)
+                total_page  = int(html[total_index:total_index_end])
+            except:
+                if i == 2:
+                    raise
+
+        time.sleep(crawl_delay)
         for pindex in range(2,total_page+1):
             suburl = "%spg%d/"%(region_url,pindex)
             print "open %s"%suburl
-            get_html_and_save(suburl,'%s/%s_page%d.html'%(region,region,pindex))
-    
+            for i in range(3):
+                try:
+                    get_html_and_save(suburl,'%s/%s_page%d.html'%(region,region,pindex))
+                except:
+                    if i == 2:
+                        raise
+            time.sleep(crawl_delay)
+
         houses=[]
         for f in os.listdir(region):
             fname=os.path.join(region,f)
@@ -66,6 +88,8 @@ def save_url_houses(seed_url):
             house_id = house[house.rfind('/')+1:house.rfind('.')]
             get_html_and_save(house,'%s/house/%s.html'%(region,house_id))
             print " success"
+            time.sleep(crawl_delay)
+    
     
 def save_houses_info(seed_url,cursor):
 
@@ -84,21 +108,26 @@ def save_houses_info(seed_url,cursor):
                                                      record.type,record.sub_info,record.total,record.price,\
                                                      record.totalvisit,record.recentvisit)
             cursor.execute(r"%s"%sql)
+            time.sleep(crawl_delay)
+
 
 if __name__=='__main__':
 
-    seed_url={'tyc':'http://tj.lianjia.com/ershoufang/taiyangcheng/',
+    seed_url={ #'tyc':'http://tj.lianjia.com/ershoufang/taiyangcheng/'}
                'mj':'http://tj.lianjia.com/ershoufang/meijiang/'}
     
     date_now=time.strftime("%Y-%m-%d")
+    '''
     if os.path.exists(date_now):
         print "Directory exist! Dumplicate house data"
         sys.exit()
     
     os.mkdir(date_now)
+    '''
     os.chdir(date_now)
+
+#    save_url_houses(seed_url)
     
-    save_url_houses(seed_url)
     
     conn = MySQLdb.connect('127.0.0.1','root','111111','',3306)
     cur = conn.cursor()

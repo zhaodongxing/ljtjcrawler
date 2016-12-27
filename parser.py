@@ -1,8 +1,8 @@
 #-*-coding:utf-8 -*-
 import os
 import re
-import urllib2
 import json
+import time
 
 class page_parser:
     def __init__(self,page):
@@ -85,21 +85,14 @@ class page_parser:
                 jstr = page.read()
                 jobj = json.loads(jstr)
                 break
-            except:
-                if i == 2:
+            except ValueError,e:
+                if str(e) == 'No JSON object could be decoded':
                     raise
+            except:
                 print "url read exception : %s"%url
+                pass
+            time.sleep(1)
 
         self.recentvisit = jobj['data']['seeRecord']['thisWeek']
         self.totalvisit = jobj['data']['seeRecord']['totalCnt']
-
-
-"""
-    def parsevisit(self):
-        pattern = re.compile(r'count">([0-9]*)</div>.*\n.*<span>([0-9]*)')
-        keys = ['class="record"',r'近7天带看次数','count','</span>']
-        match = pattern.search(self.getslice(keys))
-        self.recentvisit = match.group(1)
-        self.totalvisit = match.group(2)
-"""
 
