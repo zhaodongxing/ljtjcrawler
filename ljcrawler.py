@@ -52,6 +52,7 @@ def save_url_houses(seed_url):
             suburl = "%spg%d/"%(region_url,pindex)
             print "open %s"%suburl
             get_html_and_save(suburl,'%s/%s_page%d.html'%(region,region,pindex))
+            time.sleep(1)
     
         houses=[]
         for f in os.listdir(region):
@@ -66,6 +67,7 @@ def save_url_houses(seed_url):
             house_id = house[house.rfind('/')+1:house.rfind('.')]
             get_html_and_save(house,'%s/house/%s.html'%(region,house_id))
             print " success"
+            time.sleep(1)
     
 def save_houses_info(seed_url,cursor):
 
@@ -84,10 +86,11 @@ def save_houses_info(seed_url,cursor):
                                                      record.type,record.sub_info,record.total,record.price,\
                                                      record.totalvisit,record.recentvisit)
             cursor.execute(r"%s"%sql)
+            time.sleep(1)
 
 if __name__=='__main__':
 
-    seed_url={'tyc':'http://tj.lianjia.com/ershoufang/taiyangcheng/',
+    seed_url={#'tyc':'http://tj.lianjia.com/ershoufang/taiyangcheng/',
                'mj':'http://tj.lianjia.com/ershoufang/meijiang/'}
     
     date_now=time.strftime("%Y-%m-%d")
