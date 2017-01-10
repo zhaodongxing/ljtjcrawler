@@ -4,10 +4,10 @@ import urllib2
 import time
 
 headers={"User-Agent":"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1"}
-url='http://tj.lianjia.com/ershoufang/housestat?hid=%s&rid=%s'
+hurl='http://tj.lianjia.com/ershoufang/housestat?hid=%s&rid=%s'
 retry_count=3
 
-def get_page_pages():
+def get_page(url):
     page=None
 
     for i in range(retry_count):
@@ -25,11 +25,16 @@ def get_page_pages():
             time.sleep(1)
             print "url read exception : %s"%url
 
-    return page
+    return html
 
          
 
 def get_json_info(houseid,rid):
+    page=get_page(hurl%(houseid,rid))
+    print page
 
 
-test()
+if __name__=='__main__':
+    get_json_info('101100480930','1211045780133')
+   
+
