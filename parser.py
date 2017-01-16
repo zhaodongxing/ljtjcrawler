@@ -2,7 +2,7 @@
 import os
 import re
 import json
-import time
+from url  import get_json_info
 
 class page_parser:
     def __init__(self,page):
@@ -75,24 +75,8 @@ class page_parser:
         self.housetype = pattern.search(self.getslice(keys)).group(1)
 
     def parsevisit(self):
-        headers={"User-Agent":"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1"}
-        url='http://tj.lianjia.com/ershoufang/housestat?hid=%s&rid=%s'%(self.houseid,self.rid)
-        page = None
-        jobj = None
-        for i in range(3):
-            try:
-                page = urllib2.urlopen(urllib2.Request(url,headers=headers))
-                jstr = page.read()
-                jobj = json.loads(jstr)
-                break
-            except ValueError,e:
-                if str(e) == 'No JSON object could be decoded':
-                    raise
-            except:
-                print "url read exception : %s"%url
-                pass
-            time.sleep(1)
-
+        info = get_json_info(self.houseid,self.rid)
+        jobj = json.loads(info)
         self.recentvisit = jobj['data']['seeRecord']['thisWeek']
         self.totalvisit = jobj['data']['seeRecord']['totalCnt']
 
